@@ -38,14 +38,32 @@ module StreamLines
       end
 
       def extract_lines(chunk)
-        # Force encoding to UTF-8 and replace all invalid and undefined characters
-        # to avoid raising an invalid byte sequence error
-        encoded_chunk = chunk.encode('utf-8', :invalid => :replace, :undef => :replace)
+        # Force encoding to UTF-16 and then back to UTF-8
+        # and replace all invalid and undefined characters
+        # to avoid raising an invalid byte sequence error.
+        # This double conversion is required because it forces
+        # an actual encoding conversion which does not happen
+        # when calling encoding to UTF-8 directly if the string
+        # is already encoded in UTF-8.
+        encoded_chunk = chunk.encode!(
+          'UTF-16',
+          'UTF-8',
+          :invalid => :replace,
+          :undef => :replace,
+          :replace => ''
+        )
+        encoded_chunk.encode!('UTF-8', 'UTF-16')
         lines = encoded_chunk.split($INPUT_RECORD_SEPARATOR, -1)
 
         if lines.length > 1
           @buffer.rewind
-          lines.first.prepend(@buffer.read)
+
+          # To be extra cautious, encode the buffer to UTF-8 as well
+          buffer_string = HTTParty::TextEncoder.new(
+            @buffer.read,
+            content_type: ';charset=utf-8'
+          ).call
+          lines.first.prepend(buffer_string)
           @buffer = StringIO.new
         end
 
