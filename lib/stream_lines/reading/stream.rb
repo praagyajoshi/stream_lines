@@ -45,6 +45,7 @@ module StreamLines
         # an actual encoding conversion which does not happen
         # when calling encoding to UTF-8 directly if the string
         # is already encoded in UTF-8.
+        # Source: https://stackoverflow.com/a/8873922
         encoded_chunk = chunk.encode!(
           'UTF-16',
           'UTF-8',
@@ -59,6 +60,7 @@ module StreamLines
           @buffer.rewind
 
           # To be extra cautious, encode the buffer to UTF-8 as well
+          # using HTTParty's utility
           buffer_string = HTTParty::TextEncoder.new(
             @buffer.read,
             content_type: ';charset=utf-8'
