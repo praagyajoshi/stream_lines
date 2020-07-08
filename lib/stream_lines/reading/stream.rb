@@ -38,7 +38,10 @@ module StreamLines
       end
 
       def extract_lines(chunk)
-        lines = chunk.split($INPUT_RECORD_SEPARATOR, -1)
+        # Force encoding to UTF-8 and replace all invalid and undefined characters
+        # to avoid raising an invalid byte sequence error
+        encoded_chunk = chunk.encode('utf-8', :invalid => :replace, :undef => :replace)
+        lines = encoded_chunk.split($INPUT_RECORD_SEPARATOR, -1)
 
         if lines.length > 1
           @buffer.rewind
